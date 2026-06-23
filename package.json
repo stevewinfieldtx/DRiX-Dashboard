@@ -1,0 +1,21 @@
+{
+  "name": "drix-dashboard",
+  "version": "1.0.0",
+  "description": "DRiX Vendor Dashboard — lead visibility + intelligence for channel partners",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js",
+    "build": "cd client && npm install && npm run build && cp -r dist ../dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.20.0"
+  }
+}
