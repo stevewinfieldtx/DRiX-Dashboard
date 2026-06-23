@@ -23,7 +23,7 @@ export default function OpportunityDetail() {
   const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
-    fetch('/api//me')
+    fetch('/api/dashboard/me')
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
       .then(d => setUser(d.user))
       .catch(() => nav('/login'))
@@ -32,7 +32,7 @@ export default function OpportunityDetail() {
   useEffect(() => {
     if (!id || !user) return
     setLoading(true)
-    fetch(`/api/opp/${id}`)
+    fetch(`/api/dashboard/opp/${id}`)
       .then(r => { if (!r.ok) throw new Error('Not found'); return r.json() })
       .then(d => { setOpp(d.opportunity); setSelectedStrategy(d.opportunity?.chosen_strategy_id || null) })
       .catch(e => setError(e.message))
@@ -44,7 +44,7 @@ export default function OpportunityDetail() {
     setSelectedStrategy(stratId)
     setHydrating(true)
     try {
-      const res = await fetch(`/api/opp/${id}/select-strategy`, {
+      const res = await fetch(`/api/dashboard/opp/${id}/select-strategy`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ strategy_id: stratId }),
@@ -52,7 +52,7 @@ export default function OpportunityDetail() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       // Reload opp to get updated data
-      const oppRes = await fetch(`/api/opp/${id}`)
+      const oppRes = await fetch(`/api/dashboard/opp/${id}`)
       const oppData = await oppRes.json()
       setOpp(oppData.opportunity)
     } catch (e: any) {
@@ -66,7 +66,7 @@ export default function OpportunityDetail() {
   const updateStatus = async (status: string) => {
     setStatusUpdating(true)
     try {
-      const res = await fetch(`/api/opp/${id}/status`, {
+      const res = await fetch(`/api/dashboard/opp/${id}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
