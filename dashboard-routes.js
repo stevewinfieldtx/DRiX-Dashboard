@@ -230,7 +230,15 @@ module.exports = function install(app) {
     // Background: process each opp through DRiX-Leads
     if (drixApi.isConfigured()) {
       for (const opp of created) {
-        processDrixLead(opp).catch(e => {
+        (async () => {
+          const cached = await ddb.findProcessedByUrls(opp.customer_url, opp.solution_url, opp.partner_url, opp.id);
+          if (cached) {
+            await ddb.copyResultToOpp(opp.id, cached);
+            console.log(`[process] reused cached result for opp ${opp.id} (${opp.customer_name}) - no DRiX charge`);
+            return;
+          }
+          await processDrixLead(opp);
+        })().catch(e => {
           console.error(`[process] Failed opp ${opp.id} (${opp.customer_name}): ${e.message}`);
           ddb.updateOppDrixFailed(opp.id, e.message);
         });
