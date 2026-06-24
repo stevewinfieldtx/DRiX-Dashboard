@@ -390,6 +390,18 @@ module.exports = function install(app) {
     }
   });
 
+  app.post('/api/dashboard/opp/:id/value', requireAuth, requireRole('vendor','manager'), async (req, res) => {
+    const v = parseInt(String((req.body || {}).estimated_value).replace(/[^0-9]/g, ''));
+    if (isNaN(v) || v < 0) return res.status(400).json({ error: 'valid estimated_value required' });
+    try {
+      const opp = await ddb.getOpportunityById(parseInt(req.params.id));
+      if (!opp) return res.status(404).json({ error: 'Not found' });
+      if (!ddb.userCanAccess(req.user, opp)) return res.status(403).json({ error: 'Access denied' });
+      await ddb.updateOppValue(opp.id, v);
+      res.json({ ok: true, estimated_value: v });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
   app.post('/api/dashboard/opp/:id/status', requireAuth, async (req, res) => {
     const { status } = req.body || {};
     if (!['active', 'won', 'lost'].includes(status))

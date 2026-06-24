@@ -386,6 +386,12 @@ async function getRepsByCompany(company) {
   return res.rows;
 }
 
+async function updateOppValue(oppId, value) {
+  const p = pool();
+  if (!p) return;
+  await p.query('UPDATE opportunities SET estimated_value = $2 WHERE id = $1', [oppId, value]);
+}
+
 module.exports = {
   init,
   pool,
@@ -401,6 +407,7 @@ module.exports = {
   updateOppDrixFailed,
   assignRep,
   reassignPartner,
+  updateOppValue,
   updateOppStatus,
   selectStrategy,
   recordAccess,

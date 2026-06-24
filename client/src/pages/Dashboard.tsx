@@ -275,6 +275,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 gap-1 text-xs text-drix-dim">
                   <span>customer_url</span><span>solution_url</span>
                   <span>partner_url</span><span>manager_email</span>
+                  <span className="text-drix-muted italic">estimated_value (optional)</span>
                   <span className="text-drix-muted italic">(customer &amp; partner names are detected from the URLs)</span>
                 </div>
               </div>
