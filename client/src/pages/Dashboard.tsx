@@ -220,7 +220,7 @@ export default function Dashboard() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-drix-border bg-drix-surface2/50">
-                    {['Customer','Partner','Rep','Value','Source','Status','Views','Last Seen','Created'].map(h => (
+                    {['Customer','Partner','Solution','Rep','Value','Source','Status','Views','Last Seen','Created'].map(h => (
                       <th key={h} className={`${h === 'Views' ? 'text-center' : 'text-left'} px-3 py-3 font-extrabold tracking-wider uppercase text-drix-muted text-[10px] ${h === 'Customer' ? 'pl-4' : ''}`}>{h}</th>
                     ))}
                   </tr>
@@ -239,6 +239,7 @@ export default function Dashboard() {
                           <div className="text-drix-muted truncate max-w-[180px]">{opp.customer_url}</div>
                         </td>
                         <td className="px-3 py-3 text-drix-dim">{opp.partner_company}</td>
+                        <td className="px-3 py-3 text-drix-dim"><div className="truncate max-w-[160px]">{opp.solution_url}</div></td>
                         <td className="px-3 py-3">
                           {opp.rep_name ? <span className="text-drix-text">{opp.rep_name}</span>
                             : canAssign ? <button className="text-drix-accent font-bold hover:underline" onClick={e => { e.stopPropagation(); setAssignModal(opp) }}>Assign</button>

@@ -73,6 +73,18 @@ async function initDashboardSchema() {
         created_at  TIMESTAMPTZ DEFAULT NOW()
       );
 
+      -- Opportunity deletion audit (free-form reason)
+      CREATE TABLE IF NOT EXISTS opp_deletions (
+        id              SERIAL PRIMARY KEY,
+        opp_id          INTEGER,
+        customer_name   TEXT,
+        partner_company TEXT,
+        estimated_value INTEGER,
+        reason          TEXT NOT NULL,
+        deleted_by      TEXT,
+        deleted_at      TIMESTAMPTZ DEFAULT NOW()
+      );
+
       -- Indexes
       CREATE INDEX IF NOT EXISTS idx_opps_vendor     ON opportunities(vendor_user_id);
       CREATE INDEX IF NOT EXISTS idx_opps_manager    ON opportunities(manager_user_id);
@@ -392,6 +404,20 @@ async function updateOppValue(oppId, value) {
   await p.query('UPDATE opportunities SET estimated_value = $2 WHERE id = $1', [oppId, value]);
 }
 
+async function deleteOpportunity(oppId, reason, byEmail) {
+  const p = pool();
+  if (!p) throw new Error('Database not configured');
+  const o = await getOpportunityById(oppId);
+  if (!o) return false;
+  await p.query(
+    `INSERT INTO opp_deletions (opp_id, customer_name, partner_company, estimated_value, reason, deleted_by)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [oppId, o.customer_name, o.partner_company, o.estimated_value, reason, byEmail || null]
+  );
+  await p.query(`DELETE FROM opportunities WHERE id = $1`, [oppId]);
+  return true;
+}
+
 module.exports = {
   init,
   pool,
@@ -408,6 +434,7 @@ module.exports = {
   assignRep,
   reassignPartner,
   updateOppValue,
+  deleteOpportunity,
   updateOppStatus,
   selectStrategy,
   recordAccess,
