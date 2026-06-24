@@ -112,6 +112,8 @@ async function processLead({ partner_url, solution_url, customer_url, email }) {
     try { data = JSON.parse(dm[1]); } catch { continue; }
 
     switch (em[1].trim()) {
+      case 'error':
+        throw new Error(data.message || 'DRiX-Leads processing error');
       case 'atoms':
         result.sender = data.sender || null;
         result.solution = data.solution || null;
