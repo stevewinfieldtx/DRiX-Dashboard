@@ -44,15 +44,14 @@ export default function OpportunityDetail() {
       .finally(() => setLoading(false))
   }, [id, user])
 
-  const selectStrategy = async (stratId: string) => {
-    if (hydrating) return
-    setSelectedStrategy(stratId)
+  const selectStrategy = async () => {
+    if (hydrating || !selectedStrategy) return
     setHydrating(true)
     try {
       const res = await fetch(`/api/dashboard/opp/${id}/select-strategy`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ strategy_id: stratId }),
+        body: JSON.stringify({ strategy_id: selectedStrategy }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -278,7 +277,7 @@ export default function OpportunityDetail() {
                 return (
                   <div
                     key={s.id}
-                    onClick={() => !hydrating && selectStrategy(s.id)}
+                    onClick={() => { if (!hydrating) setSelectedStrategy(s.id) }}
                     className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
                       isSelected ? 'border-drix-green bg-drix-green/5' : 'border-drix-border hover:border-drix-accent/50'
                     } ${hydrating ? 'opacity-50 cursor-wait' : ''}`}
@@ -303,12 +302,13 @@ export default function OpportunityDetail() {
                 )
               })}
             </div>
-            {hydrating && (
-              <div className="mt-4 flex items-center gap-3 text-xs text-drix-accent">
-                <span className="w-4 h-4 border-2 border-drix-accent/30 border-t-drix-accent rounded-full animate-spin" />
-                Generating discovery questions and email campaign...
-              </div>
-            )}
+            <div className="mt-5 flex items-center gap-3">
+              <button onClick={selectStrategy} disabled={!selectedStrategy || hydrating}
+                className="bg-gradient-to-r from-drix-accent to-drix-purple text-white rounded-xl px-5 py-2.5 text-sm font-bold hover:shadow-glow transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                {hydrating && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                {hydrating ? 'Generating...' : selectedStrategy ? 'Generate questions & email campaign' : 'Select a strategy first'}
+              </button>
+            </div>
           </motion.div>
         )}
 
