@@ -220,7 +220,7 @@ export default function Dashboard() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-drix-border bg-drix-surface2/50">
-                    {['Customer','Partner','Rep','Value','Source','Status','Strategy','Views','Last Seen','Created'].map(h => (
+                    {['Customer','Partner','Rep','Value','Source','Status','Views','Last Seen','Created'].map(h => (
                       <th key={h} className={`${h === 'Views' ? 'text-center' : 'text-left'} px-3 py-3 font-extrabold tracking-wider uppercase text-drix-muted text-[10px] ${h === 'Customer' ? 'pl-4' : ''}`}>{h}</th>
                     ))}
                   </tr>
@@ -247,7 +247,6 @@ export default function Dashboard() {
                         <td className="px-3 py-3 font-semibold text-drix-text">{fmtMoney(opp.estimated_value)}</td>
                         <td className="px-3 py-3"><span className="bg-drix-surface2 border border-drix-border/50 px-2 py-0.5 rounded-md text-drix-dim">{opp.lead_source}</span></td>
                         <td className="px-3 py-3"><span className={`${sc.bg} ${sc.text} px-2.5 py-1 rounded-lg font-bold text-[10px] tracking-wide uppercase`}>{sc.label}</span></td>
-                        <td className="px-3 py-3 text-drix-dim truncate max-w-[140px]">{opp.chosen_strategy_title || '—'}</td>
                         <td className="px-3 py-3 text-center font-semibold">{opp.view_count}</td>
                         <td className="px-3 py-3 text-drix-muted">{ago(opp.last_accessed_at)}</td>
                         <td className="px-3 py-3 text-drix-muted">{fmtDate(opp.created_at)}</td>
