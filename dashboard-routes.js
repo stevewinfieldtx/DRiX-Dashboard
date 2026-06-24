@@ -402,6 +402,30 @@ module.exports = function install(app) {
     } catch (e) { res.status(500).json({ error: e.message }); }
   });
 
+  app.post('/api/dashboard/opp/:id/coach-chat', requireAuth, async (req, res) => {
+    const { message, history } = req.body || {};
+    if (!message) return res.status(400).json({ error: 'message required' });
+    try {
+      const opp = await ddb.getOpportunityById(parseInt(req.params.id));
+      if (!opp) return res.status(404).json({ error: 'Not found' });
+      if (!ddb.userCanAccess(req.user, opp)) return res.status(403).json({ error: 'Access denied' });
+      if (!opp.run_id) return res.status(400).json({ error: 'No analysis run for this opportunity yet' });
+      const data = await drixApi.coachChat(opp.run_id, message, history);
+      res.json(data);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post('/api/dashboard/opp/:id/coach-voice', requireAuth, async (req, res) => {
+    try {
+      const opp = await ddb.getOpportunityById(parseInt(req.params.id));
+      if (!opp) return res.status(404).json({ error: 'Not found' });
+      if (!ddb.userCanAccess(req.user, opp)) return res.status(403).json({ error: 'Access denied' });
+      if (!opp.run_id) return res.status(400).json({ error: 'No analysis run for this opportunity yet' });
+      const data = await drixApi.provisionVoice(opp.run_id);
+      res.json(data);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
   app.post('/api/dashboard/opp/:id/value', requireAuth, requireRole('vendor','manager','rep'), async (req, res) => {
     const v = parseInt(String((req.body || {}).estimated_value).replace(/[^0-9]/g, ''));
     if (isNaN(v) || v < 0) return res.status(400).json({ error: 'valid estimated_value required' });

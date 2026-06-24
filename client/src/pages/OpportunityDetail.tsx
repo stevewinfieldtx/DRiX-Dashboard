@@ -28,6 +28,13 @@ export default function OpportunityDetail() {
   const [copied, setCopied] = useState(false)
   const [editVal, setEditVal] = useState(false)
   const [valInput, setValInput] = useState('')
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatInput, setChatInput] = useState('')
+  const [chatMsgs, setChatMsgs] = useState<{ role: string; content: string }[]>([])
+  const [chatLoading, setChatLoading] = useState(false)
+  const [voiceLoading, setVoiceLoading] = useState(false)
+  const [voiceAgentId, setVoiceAgentId] = useState('')
+  const [voiceError, setVoiceError] = useState('')
 
   useEffect(() => {
     fetch('/api/dashboard/me')
@@ -67,6 +74,48 @@ export default function OpportunityDetail() {
     } finally {
       setHydrating(false)
     }
+  }
+
+  useEffect(() => {
+    if (voiceAgentId && !document.querySelector('script[src*="elevenlabs.io/convai-widget"]')) {
+      const sc = document.createElement('script')
+      sc.src = 'https://elevenlabs.io/convai-widget/index.js'
+      sc.async = true
+      document.body.appendChild(sc)
+    }
+  }, [voiceAgentId])
+
+  const sendChat = async () => {
+    const msg = chatInput.trim()
+    if (!msg || chatLoading) return
+    setChatInput('')
+    const history = chatMsgs.filter(m => m.role === 'user' || m.role === 'assistant').map(m => ({ role: m.role, content: m.content }))
+    setChatMsgs(prev => [...prev, { role: 'user', content: msg }])
+    setChatLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/opp/${id}/coach-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, history }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Coach failed')
+      setChatMsgs(prev => [...prev, { role: 'assistant', content: data.reply || '' }])
+    } catch (e: any) {
+      setChatMsgs(prev => [...prev, { role: 'system', content: 'Error: ' + e.message }])
+    } finally { setChatLoading(false) }
+  }
+
+  const openVoice = async () => {
+    if (voiceLoading) return
+    setVoiceError(''); setVoiceLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/opp/${id}/coach-voice`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Voice provisioning failed')
+      setVoiceAgentId(data.agent_id)
+    } catch (e: any) { setVoiceError(e.message) }
+    finally { setVoiceLoading(false) }
   }
 
   const saveValue = async () => {
@@ -250,6 +299,40 @@ export default function OpportunityDetail() {
             </div>
           )}
         </motion.div>
+
+        {/* AI Sales Coach (chat + voice) */}
+        {opp.run_id && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-drix-surface border border-drix-border rounded-2xl p-6 mb-6">
+            <div className="text-[11px] font-extrabold tracking-[2px] uppercase text-drix-muted mb-3 flex items-center gap-2"><span className="w-3 h-0.5 bg-drix-purple rounded-full" />AI Sales Coach</div>
+            <div className="text-xs text-drix-dim mb-4">Ask anything about this deal - pain points, objections, what to say, who to target. Grounded in this analysis.</div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={() => setChatOpen(o => !o)} className="bg-drix-accent text-white rounded-lg px-4 py-2 text-xs font-bold hover:shadow-glow transition-all">{chatOpen ? 'Hide chat' : 'Chat Coach'}</button>
+              <button onClick={openVoice} disabled={voiceLoading} className="bg-drix-purple text-white rounded-lg px-4 py-2 text-xs font-bold hover:shadow-glow transition-all disabled:opacity-50">{voiceLoading ? 'Starting...' : 'Voice Coach'}</button>
+            </div>
+            {chatOpen && (
+              <div className="mt-4 border border-drix-border rounded-xl p-3 bg-drix-bg">
+                <div className="flex flex-col gap-2 max-h-80 overflow-y-auto mb-3">
+                  {chatMsgs.length === 0 && <div className="text-xs text-drix-muted">Ask me anything about this deal.</div>}
+                  {chatMsgs.map((m, i) => (
+                    <div key={i} className={`text-xs leading-relaxed rounded-lg px-3 py-2 whitespace-pre-wrap ${m.role === 'user' ? 'bg-drix-accent/15 text-drix-text self-end max-w-[85%]' : m.role === 'assistant' ? 'bg-drix-surface2 text-drix-dim max-w-[90%]' : 'bg-drix-red/10 text-[#ff9a9a] max-w-[90%]'}`}>{m.content}</div>
+                  ))}
+                  {chatLoading && <div className="text-xs text-drix-muted">Coach is thinking...</div>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendChat() }} placeholder="What should I lead with?" className="flex-1 bg-drix-surface2 border border-drix-border rounded-lg px-3 py-2 text-xs text-drix-text outline-none focus:border-drix-accent" />
+                  <button onClick={sendChat} disabled={chatLoading || !chatInput.trim()} className="bg-drix-accent text-white rounded-lg px-3 py-2 text-xs font-bold disabled:opacity-50">Send</button>
+                </div>
+              </div>
+            )}
+            {voiceError && <div className="mt-3 text-xs text-drix-red">{voiceError}</div>}
+            {voiceAgentId && (
+              <div className="mt-4 border border-drix-border rounded-xl p-3 bg-drix-bg">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-drix-muted mb-2">Voice Coach - talk to your AI coach</div>
+                <div dangerouslySetInnerHTML={{ __html: `<elevenlabs-convai agent-id="${voiceAgentId}"></elevenlabs-convai>` }} />
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* Processing state */}
         {opp.status === 'processing' && (

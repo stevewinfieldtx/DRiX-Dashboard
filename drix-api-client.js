@@ -168,8 +168,36 @@ async function hydrateLead({ run_id, strategy_id, custom_strategy }) {
   return data;
 }
 
+async function coachChat(run_id, message, history) {
+  const base = DRIX_API_URL();
+  if (!base) throw new Error('DRIX_API_URL not configured');
+  const cookie = await ensureAuth();
+  const res = await fetch(`${base}/api/coach-chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Cookie': cookie },
+    body: JSON.stringify({ run_id, message, history: history || [] }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Coach failed (${res.status})`);
+  return data;
+}
+
+async function provisionVoice(run_id) {
+  const base = DRIX_API_URL();
+  if (!base) throw new Error('DRIX_API_URL not configured');
+  const cookie = await ensureAuth();
+  const res = await fetch(`${base}/api/coach-voice/provision`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Cookie': cookie },
+    body: JSON.stringify({ run_id }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Voice provisioning failed (${res.status})`);
+  return data;
+}
+
 function isConfigured() {
   return !!(DRIX_API_URL() && DRIX_API_EMAIL() && DRIX_API_PASSWORD());
 }
 
-module.exports = { processLead, hydrateLead, ensureAuth, isConfigured };
+module.exports = { processLead, hydrateLead, ensureAuth, isConfigured, coachChat, provisionVoice };
