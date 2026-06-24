@@ -156,6 +156,22 @@ export default function OpportunityDetail() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-drix-accent/15 text-drix-accent border border-drix-accent/30 hover:bg-drix-accent/25 transition-all">
               Open full analysis in DRiX
             </a>
+            {user?.role === 'vendor' && (
+              <button onClick={async () => {
+                const reason = window.prompt('Why are you deleting this opportunity? (required)')
+                if (reason === null) return
+                if (!reason.trim()) { alert('A reason is required.'); return }
+                try {
+                  const res = await fetch(`/api/dashboard/opp/${id}/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: reason.trim() }) })
+                  const data = await res.json()
+                  if (!res.ok) throw new Error(data.error)
+                  nav('/')
+                } catch (e: any) { alert(e.message) }
+              }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-drix-red/15 text-drix-red border border-drix-red/30 hover:bg-drix-red/25 transition-all">
+              Delete
+            </button>
+            )}
             {opp.status !== 'won' && opp.status !== 'lost' && hasHydration && (
               <>
                 <button
