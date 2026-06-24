@@ -46,9 +46,6 @@ export default function Dashboard() {
   const [assignName, setAssignName] = useState('')
   const [assignEmail, setAssignEmail] = useState('')
   const [assignLoading, setAssignLoading] = useState(false)
-  const [showManual, setShowManual] = useState(false)
-  const [manual, setManual] = useState({ customer_url: '', solution_url: '', partner_url: '', manager_email: '', estimated_value: '' })
-  const [manualLoading, setManualLoading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -100,24 +97,6 @@ export default function Dashboard() {
       setUploadStatus(`Error: ${err.message}`)
     }
     if (fileRef.current) fileRef.current.value = ''
-  }
-
-  const handleManual = async () => {
-    if (!manual.customer_url.trim() || !manual.solution_url.trim() || !manual.partner_url.trim() || !manual.manager_email.trim()) return
-    setManualLoading(true)
-    try {
-      const res = await fetch('/api/dashboard/opp/manual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(manual),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to add lead')
-      setShowManual(false)
-      setManual({ customer_url: '', solution_url: '', partner_url: '', manager_email: '', estimated_value: '' })
-      loadData()
-    } catch (err: any) { alert(err.message) }
-    finally { setManualLoading(false) }
   }
 
   const handleAssign = async () => {
@@ -212,16 +191,10 @@ export default function Dashboard() {
             )}
           </div>
           {(user.role === 'vendor' || user.role === 'manager') && (
-            <div className="flex items-center gap-2">
-              <button onClick={() => setShowManual(true)}
-                className="flex items-center gap-2 bg-drix-surface2 border border-drix-border text-drix-text rounded-lg px-4 py-2 text-xs font-bold hover:border-drix-accent transition-all">
-                + Add Lead
-              </button>
-              <button onClick={() => setShowUpload(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-drix-accent to-drix-purple text-white rounded-lg px-4 py-2 text-xs font-bold hover:shadow-glow transition-all">
-                <Upload size={14} /> Upload CSV
-              </button>
-            </div>
+            <button onClick={() => setShowUpload(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-drix-accent to-drix-purple text-white rounded-lg px-4 py-2 text-xs font-bold hover:shadow-glow transition-all">
+              <Upload size={14} /> Upload CSV
+            </button>
           )}
         </div>
 
@@ -287,52 +260,6 @@ export default function Dashboard() {
           )}
         </motion.div>
       </div>
-
-      {/* Manual Lead Modal */}
-      <AnimatePresence>
-        {showManual && (
-          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowManual(false)}>
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-drix-surface border border-drix-border rounded-2xl p-6 max-w-lg w-full" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-black text-drix-text">Add a Lead</h2>
-                <button onClick={() => setShowManual(false)} className="text-drix-dim hover:text-drix-text"><X size={18} /></button>
-              </div>
-              <div className="space-y-3 mb-5">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold tracking-widest uppercase text-drix-muted">Customer URL</label>
-                  <input value={manual.customer_url} onChange={e => setManual({ ...manual, customer_url: e.target.value })} autoFocus className="bg-drix-surface2 border border-drix-border rounded-xl px-4 py-2.5 text-sm text-drix-text outline-none focus:border-drix-accent transition-all" placeholder="customer.com" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold tracking-widest uppercase text-drix-muted">Solution URL</label>
-                  <input value={manual.solution_url} onChange={e => setManual({ ...manual, solution_url: e.target.value })} className="bg-drix-surface2 border border-drix-border rounded-xl px-4 py-2.5 text-sm text-drix-text outline-none focus:border-drix-accent transition-all" placeholder="yourcompany.com/product" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold tracking-widest uppercase text-drix-muted">Partner URL</label>
-                  <input value={manual.partner_url} onChange={e => setManual({ ...manual, partner_url: e.target.value })} className="bg-drix-surface2 border border-drix-border rounded-xl px-4 py-2.5 text-sm text-drix-text outline-none focus:border-drix-accent transition-all" placeholder="partner.com" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold tracking-widest uppercase text-drix-muted">Partner manager email</label>
-                  <input value={manual.manager_email} onChange={e => setManual({ ...manual, manager_email: e.target.value })} className="bg-drix-surface2 border border-drix-border rounded-xl px-4 py-2.5 text-sm text-drix-text outline-none focus:border-drix-accent transition-all" placeholder="manager@partner.com" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold tracking-widest uppercase text-drix-muted">Estimated value (optional)</label>
-                  <input value={manual.estimated_value} onChange={e => setManual({ ...manual, estimated_value: e.target.value })} className="bg-drix-surface2 border border-drix-border rounded-xl px-4 py-2.5 text-sm text-drix-text outline-none focus:border-drix-accent transition-all" placeholder="50000" />
-                </div>
-                <div className="text-[10px] text-drix-muted italic">Customer &amp; partner names are detected from the URLs.</div>
-              </div>
-              <div className="flex gap-3 justify-end">
-                <button onClick={() => setShowManual(false)} className="px-4 py-2.5 rounded-lg text-xs font-bold border border-drix-border text-drix-dim hover:text-drix-text transition-all">Cancel</button>
-                <button onClick={handleManual} disabled={manualLoading || !manual.customer_url.trim() || !manual.solution_url.trim() || !manual.partner_url.trim() || !manual.manager_email.trim()}
-                  className="px-5 py-2.5 rounded-lg text-xs font-bold bg-gradient-to-r from-drix-accent to-drix-purple text-white hover:shadow-glow transition-all disabled:opacity-50 flex items-center gap-2">
-                  {manualLoading && <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  Add Lead
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Upload Modal */}
       <AnimatePresence>
