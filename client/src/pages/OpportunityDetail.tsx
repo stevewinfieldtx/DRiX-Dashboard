@@ -151,7 +151,7 @@ export default function OpportunityDetail() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-drix-surface2 text-drix-dim border border-drix-border hover:text-drix-text transition-all">
               {copied ? 'Link copied!' : 'Copy link'}
             </button>
-            <a href={`https://drix-leads.up.railway.app/?sender=${encodeURIComponent(opp.partner_url || '')}&solution=${encodeURIComponent(opp.solution_url || '')}&customer=${encodeURIComponent(opp.customer_url || '')}&email=${encodeURIComponent(user?.email || '')}&autorun=1`}
+            <a href={opp.run_id ? `https://drix-leads.up.railway.app/?run=${encodeURIComponent(opp.run_id)}` : `https://drix-leads.up.railway.app/?sender=${encodeURIComponent(opp.partner_url || '')}&solution=${encodeURIComponent(opp.solution_url || '')}&customer=${encodeURIComponent(opp.customer_url || '')}&email=${encodeURIComponent(user?.email || '')}&autorun=1`}
               target="_blank" rel="noreferrer"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-drix-accent/15 text-drix-accent border border-drix-accent/30 hover:bg-drix-accent/25 transition-all">
               Open full analysis in DRiX
