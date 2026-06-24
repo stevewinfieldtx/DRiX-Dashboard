@@ -386,12 +386,6 @@ async function getRepsByCompany(company) {
   return res.rows;
 }
 
-async function resetAllDev() {
-  const p = pool();
-  if (!p) throw new Error('Database not configured');
-  await p.query('TRUNCATE opp_access_log, opportunities, dashboard_users RESTART IDENTITY CASCADE');
-}
-
 module.exports = {
   init,
   pool,
@@ -407,7 +401,6 @@ module.exports = {
   updateOppDrixFailed,
   assignRep,
   reassignPartner,
-  resetAllDev,
   updateOppStatus,
   selectStrategy,
   recordAccess,

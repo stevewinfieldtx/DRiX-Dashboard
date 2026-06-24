@@ -124,16 +124,6 @@ module.exports = function install(app) {
   });
 
   // Bootstrap: register first vendor account
-  // DEV: wipe ALL users + opportunities. Auth + confirm phrase required. Remove before production.
-  app.post('/api/dashboard/dev/reset', requireAuth, async (req, res) => {
-    if ((req.body || {}).confirm !== 'RESET-DRIX-DEV') return res.status(403).json({ error: 'confirm phrase required' });
-    try {
-      await ddb.resetAllDev();
-      res.clearCookie('drix_dash', { path: '/' });
-      res.json({ ok: true, message: 'All users and opportunities cleared.' });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-  });
-
   app.post('/api/dashboard/register-vendor', async (req, res) => {
     const { email, password, name, company } = req.body || {};
     if (!email || !password || !name || !company)

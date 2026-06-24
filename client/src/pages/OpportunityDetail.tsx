@@ -25,6 +25,7 @@ export default function OpportunityDetail() {
   const [partnerUrl, setPartnerUrl] = useState('')
   const [managerEmail, setManagerEmail] = useState('')
   const [reassigning, setReassigning] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     fetch('/api/dashboard/me')
@@ -129,6 +130,10 @@ export default function OpportunityDetail() {
             <ArrowLeft size={14} /> Back to Dashboard
           </button>
           <div className="flex items-center gap-3">
+            <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-drix-surface2 text-drix-dim border border-drix-border hover:text-drix-text transition-all">
+              {copied ? 'Link copied!' : 'Copy link'}
+            </button>
             {opp.status !== 'won' && opp.status !== 'lost' && hasHydration && (
               <>
                 <button
