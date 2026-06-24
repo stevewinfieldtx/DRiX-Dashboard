@@ -390,6 +390,50 @@ module.exports = function install(app) {
     }
   });
 
+  // Manual single-lead entry (alternative to CSV upload)
+  app.post('/api/dashboard/opp/manual', requireAuth, requireRole('vendor', 'manager'), async (req, res) => {
+    const b = req.body || {};
+    const customer_url = String(b.customer_url || '').trim();
+    const solution_url = String(b.solution_url || '').trim();
+    const partner_url  = String(b.partner_url  || '').trim();
+    const manager_email = String(b.manager_email || '').trim();
+    if (!customer_url || !solution_url || !partner_url || !manager_email)
+      return res.status(400).json({ error: 'customer_url, solution_url, partner_url and manager_email are required' });
+    try {
+      const partnerCompany = nameFromUrl(partner_url) || partner_url;
+      const customerName = nameFromUrl(customer_url) || customer_url;
+      let mgr = await ddb.getUserByEmail(manager_email);
+      if (!mgr) {
+        const pw = tempPassword();
+        mgr = await ddb.createUser({ email: manager_email, password: pw, name: manager_email.split('@')[0], role: 'manager', company: partnerCompany });
+        sendEmail(mgr.email, 'New opportunity in DRiX',
+          '<p>Hi ' + mgr.name + ',</p>' +
+          '<p>You have been assigned an opportunity in the DRiX Dashboard.</p>' +
+          '<p><strong>Email:</strong> ' + mgr.email + '<br><strong>Temporary password:</strong> ' + pw + '</p>' +
+          (APP_URL ? '<p><a href="' + APP_URL + '/login">Log in</a></p>' : '') +
+          '<p>- DRiX by WinTech Partners</p>');
+      }
+      const opp = await ddb.createOpportunity({
+        customer_name: customerName,
+        customer_url,
+        solution_url,
+        partner_company: partnerCompany,
+        partner_url,
+        estimated_value: parseInt(String(b.estimated_value || '').replace(/[^0-9]/g, '')) || 0,
+        lead_source: 'Manual',
+        notes: b.notes ? String(b.notes).trim() : null,
+        vendor_user_id: req.user.role === 'vendor' ? req.user.id : null,
+        manager_user_id: mgr.id,
+      });
+      if (drixApi.isConfigured()) {
+        processDrixLead(opp).catch(e => { console.error(`[process] manual opp ${opp.id}: ${e.message}`); ddb.updateOppDrixFailed(opp.id, e.message); });
+      } else {
+        ddb.updateOppDrixResult(opp.id, { run_id: `manual_${opp.id}`, drix_result: { note: 'Processing skipped - DRIX_API_URL not configured' } });
+      }
+      res.json({ ok: true, opportunity: { id: opp.id, customer_name: opp.customer_name } });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
   app.post('/api/dashboard/opp/:id/delete', requireAuth, requireRole('vendor'), async (req, res) => {
     const reason = String((req.body || {}).reason || '').trim();
     if (!reason) return res.status(400).json({ error: 'A reason is required to delete' });
