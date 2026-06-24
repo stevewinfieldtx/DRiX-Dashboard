@@ -228,12 +228,12 @@ export default function Dashboard() {
                 <tbody>
                   {filtered.map(opp => {
                     const sc = STATUS_COLORS[opp.status] || STATUS_COLORS.processing
-                    const canAssign = (user.role === 'manager' || user.role === 'vendor') && ['ready'].includes(opp.status) && !opp.rep_name
+                    const canAssign = (user.role === 'manager' || user.role === 'vendor') && !opp.rep_name && !['processing'].includes(opp.status)
                     const canClick = !['processing'].includes(opp.status)
                     return (
                       <tr key={opp.id}
                         className={`border-b border-drix-border/50 transition-colors ${canClick ? 'hover:bg-drix-accent/5 cursor-pointer' : 'opacity-60'}`}
-                        onClick={() => { if (canAssign) setAssignModal(opp); else if (canClick) nav(`/opp/${opp.id}`) }}>
+                        onClick={() => { if (canClick) nav(`/opp/${opp.id}`) }}>
                         <td className="pl-4 pr-3 py-3">
                           <div className="font-bold text-drix-text text-sm">{opp.customer_name}</div>
                           <div className="text-drix-muted truncate max-w-[180px]">{opp.customer_url}</div>
