@@ -418,6 +418,44 @@ async function deleteOpportunity(oppId, reason, byEmail) {
   return true;
 }
 
+async function findProcessedByUrls(customer_url, solution_url, partner_url, excludeId) {
+  const p = pool();
+  if (!p) return null;
+  const res = await p.query(`
+    SELECT run_id, drix_result, hydration_result, chosen_strategy_id, chosen_strategy_title
+    FROM opportunities
+    WHERE customer_url = $1 AND solution_url = $2 AND partner_url = $3
+      AND id <> $4
+      AND run_id IS NOT NULL AND run_id NOT LIKE 'manual_%'
+      AND drix_result IS NOT NULL
+      AND (drix_result->'strategies'->'strategies') IS NOT NULL
+    ORDER BY created_at DESC
+    LIMIT 1
+  `, [customer_url, solution_url, partner_url, excludeId || 0]);
+  return res.rows[0] || null;
+}
+
+async function copyResultToOpp(oppId, cached) {
+  const p = pool();
+  if (!p) return;
+  const status = cached.hydration_result ? 'active' : 'ready';
+  await p.query(`
+    UPDATE opportunities
+    SET run_id = $2, drix_result = $3, hydration_result = $4,
+        chosen_strategy_id = $5, chosen_strategy_title = $6,
+        status = $7, status_changed_at = NOW()
+    WHERE id = $1
+  `, [
+    oppId,
+    cached.run_id,
+    cached.drix_result ? JSON.stringify(cached.drix_result) : null,
+    cached.hydration_result ? JSON.stringify(cached.hydration_result) : null,
+    cached.chosen_strategy_id || null,
+    cached.chosen_strategy_title || null,
+    status,
+  ]);
+}
+
 module.exports = {
   init,
   pool,
@@ -435,6 +473,8 @@ module.exports = {
   reassignPartner,
   updateOppValue,
   deleteOpportunity,
+  findProcessedByUrls,
+  copyResultToOpp,
   updateOppStatus,
   selectStrategy,
   recordAccess,
