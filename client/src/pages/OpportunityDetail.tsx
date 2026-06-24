@@ -190,14 +190,14 @@ export default function OpportunityDetail() {
             <div>
               <h1 className="text-2xl font-black tracking-tight mb-1">{opp.customer_name}</h1>
               <div className="flex items-center gap-3 text-xs text-drix-dim flex-wrap">
-                {(user?.role === 'vendor' || user?.role === 'manager') && editVal ? (
+                {(user?.role === 'vendor' || user?.role === 'manager' || user?.role === 'rep') && editVal ? (
                   <span className="flex items-center gap-1"><DollarSign size={12} />
                     <input value={valInput} onChange={e => setValInput(e.target.value)} placeholder="0" className="w-24 bg-drix-surface2 border border-drix-border rounded px-2 py-0.5 text-drix-text outline-none focus:border-drix-accent" />
                     <button onClick={saveValue} className="text-drix-accent font-bold ml-1">Save</button>
                     <button onClick={() => setEditVal(false)} className="text-drix-dim ml-1">Cancel</button>
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1"><DollarSign size={12} />${(opp.estimated_value || 0).toLocaleString()}{(user?.role === 'vendor' || user?.role === 'manager') && <button onClick={() => { setEditVal(true); setValInput(String(opp.estimated_value || '')) }} className="text-drix-accent text-[10px] font-bold ml-1 hover:underline">edit</button>}</span>
+                  <span className="flex items-center gap-1"><DollarSign size={12} />${(opp.estimated_value || 0).toLocaleString()}{(user?.role === 'vendor' || user?.role === 'manager' || user?.role === 'rep') && <button onClick={() => { setEditVal(true); setValInput(String(opp.estimated_value || '')) }} className="text-drix-accent text-[10px] font-bold ml-1 hover:underline">edit</button>}</span>
                 )}
                 <span className="text-drix-border">·</span>
                 <span>{opp.partner_company}</span>

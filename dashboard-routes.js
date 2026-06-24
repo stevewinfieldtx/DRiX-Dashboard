@@ -390,7 +390,7 @@ module.exports = function install(app) {
     }
   });
 
-  app.post('/api/dashboard/opp/:id/value', requireAuth, requireRole('vendor','manager'), async (req, res) => {
+  app.post('/api/dashboard/opp/:id/value', requireAuth, requireRole('vendor','manager','rep'), async (req, res) => {
     const v = parseInt(String((req.body || {}).estimated_value).replace(/[^0-9]/g, ''));
     if (isNaN(v) || v < 0) return res.status(400).json({ error: 'valid estimated_value required' });
     try {
