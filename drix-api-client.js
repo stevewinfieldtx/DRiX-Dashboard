@@ -66,23 +66,42 @@ async function processLead({ partner_url, solution_url, customer_url, email }) {
   };
 
   console.log(`[drix-api] Processing lead: ${customer_url}`);
-  const res = await fetch(`${base}/api/demo-flow`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Cookie': cookie,
-    },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 300000); // 5-min hard cap; a hung run must never stick
+  let res;
+  try {
+    res = await fetch(`${base}/api/demo-flow`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookie,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') throw new Error('DRiX-Leads processing timed out (5 min)');
+    throw e;
+  }
 
   if (!res.ok) {
+    clearTimeout(timer);
     const err = await res.json().catch(() => ({}));
     throw new Error(`DRiX-Leads processing failed: ${err.error || res.status}`);
   }
 
   // Parse SSE stream
   const result = { sender: null, solution: null, customer: null, pain_groups: null, strategies: null, run_id: null };
-  const text = await res.text();
+  let text;
+  try {
+    text = await res.text();
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('DRiX-Leads processing timed out (5 min)');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
   const events = text.split('\n\n').filter(Boolean);
 
   for (const block of events) {
