@@ -21,6 +21,10 @@ export default function OpportunityDetail() {
   const [hydrating, setHydrating] = useState(false)
   const [statusUpdating, setStatusUpdating] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [reassign, setReassign] = useState(false)
+  const [partnerUrl, setPartnerUrl] = useState('')
+  const [managerEmail, setManagerEmail] = useState('')
+  const [reassigning, setReassigning] = useState(false)
 
   useEffect(() => {
     fetch('/api/dashboard/me')
@@ -60,6 +64,28 @@ export default function OpportunityDetail() {
       setSelectedStrategy(opp?.chosen_strategy_id || null)
     } finally {
       setHydrating(false)
+    }
+  }
+
+  const doReassign = async () => {
+    if (!partnerUrl.trim() || !managerEmail.trim()) return
+    setReassigning(true)
+    try {
+      const res = await fetch(`/api/dashboard/opp/${id}/reassign-partner`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partner_url: partnerUrl.trim(), manager_email: managerEmail.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      const oppRes = await fetch(`/api/dashboard/opp/${id}`)
+      const oppData = await oppRes.json()
+      setOpp(oppData.opportunity)
+      setReassign(false)
+    } catch (e: any) {
+      alert(e.message)
+    } finally {
+      setReassigning(false)
     }
   }
 
@@ -156,6 +182,27 @@ export default function OpportunityDetail() {
             </span>
           </div>
           {opp.notes && <div className="mt-3 text-xs text-drix-dim bg-drix-surface border border-drix-border rounded-lg px-3 py-2">{opp.notes}</div>}
+          {user?.role === 'vendor' && (
+            <div className="mt-3">
+              {!reassign ? (
+                <button onClick={() => { setReassign(true); setPartnerUrl(opp.partner_url || ''); setManagerEmail(opp.manager_email || '') }}
+                  className="text-xs text-drix-accent font-bold hover:underline">Change partner</button>
+              ) : (
+                <div className="bg-drix-surface border border-drix-border rounded-xl p-3 flex flex-col gap-2 max-w-md">
+                  <div className="text-[10px] font-bold tracking-wider uppercase text-drix-muted">Reassign partner</div>
+                  <input value={partnerUrl} onChange={e => setPartnerUrl(e.target.value)} placeholder="Partner URL"
+                    className="bg-drix-surface2 border border-drix-border rounded-lg px-3 py-2 text-xs text-drix-text outline-none focus:border-drix-accent" />
+                  <input value={managerEmail} onChange={e => setManagerEmail(e.target.value)} placeholder="Partner manager email"
+                    className="bg-drix-surface2 border border-drix-border rounded-lg px-3 py-2 text-xs text-drix-text outline-none focus:border-drix-accent" />
+                  <div className="flex items-center gap-2">
+                    <button onClick={doReassign} disabled={reassigning || !partnerUrl.trim() || !managerEmail.trim()}
+                      className="bg-drix-accent text-white rounded-lg px-3 py-1.5 text-xs font-bold disabled:opacity-50">{reassigning ? 'Saving...' : 'Save'}</button>
+                    <button onClick={() => setReassign(false)} className="text-xs text-drix-dim hover:text-drix-text">Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </motion.div>
 
         {/* Processing state */}

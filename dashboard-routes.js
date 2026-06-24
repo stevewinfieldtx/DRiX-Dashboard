@@ -75,6 +75,18 @@ async function sendEmail(to, subject, html) {
 
 function tempPassword() { return crypto.randomBytes(4).toString('hex'); }
 
+// Derive a display name from a URL (e.g. https://www.acme-corp.com -> "Acme Corp")
+function nameFromUrl(url) {
+  try {
+    let h = String(url || '').trim();
+    if (!h) return '';
+    if (!/^https?:\/\//i.test(h)) h = 'https://' + h;
+    const host = new URL(h).hostname.replace(/^www\./i, '');
+    const label = host.split('.').slice(0, -1)[0] || host;
+    return label.split(/[-_]/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  } catch { return String(url || '').trim(); }
+}
+
 function setCookie(res, token) {
   res.cookie('drix_dash', token, {
     httpOnly: true,
@@ -151,14 +163,14 @@ module.exports = function install(app) {
     }
     if (!rows.length) return res.status(400).json({ error: 'CSV is empty' });
 
-    const required = ['customer_name','customer_url','solution_url','partner_company','partner_url','manager_name','manager_email','estimated_value','lead_source'];
+    const required = ['customer_url','solution_url','partner_url','manager_email'];
     const headers = Object.keys(rows[0]);
     const missing = required.filter(r => !headers.includes(r));
     if (missing.length) return res.status(400).json({ error: `Missing columns: ${missing.join(', ')}`, expected: required });
 
     const errors = [];
     rows.forEach((row, i) => {
-      if (!row.customer_name?.trim()) errors.push(`Row ${i+1}: missing customer_name`);
+      if (!row.partner_url?.trim()) errors.push(`Row ${i+1}: missing partner_url`);
       if (!row.customer_url?.trim()) errors.push(`Row ${i+1}: missing customer_url`);
       if (!row.solution_url?.trim()) errors.push(`Row ${i+1}: missing solution_url`);
       if (!row.manager_email?.trim()) errors.push(`Row ${i+1}: missing manager_email`);
@@ -170,25 +182,27 @@ module.exports = function install(app) {
 
     for (const row of rows) {
       try {
+        const partnerCompany = nameFromUrl(row.partner_url) || row.partner_url.trim();
+        const customerName = nameFromUrl(row.customer_url) || row.customer_url.trim();
         let mgr = await ddb.getUserByEmail(row.manager_email.trim());
         if (!mgr) {
           const pw = tempPassword();
           mgr = await ddb.createUser({
             email: row.manager_email.trim(),
             password: pw,
-            name: row.manager_name?.trim() || row.manager_email.split('@')[0],
+            name: row.manager_email.split('@')[0],
             role: 'manager',
-            company: row.partner_company.trim(),
+            company: partnerCompany,
           });
           managersNew.push({ email: mgr.email, name: mgr.name, pw });
         }
         const opp = await ddb.createOpportunity({
-          customer_name: row.customer_name.trim(),
+          customer_name: customerName,
           customer_url: row.customer_url.trim(),
           solution_url: row.solution_url.trim(),
-          partner_company: row.partner_company.trim(),
+          partner_company: partnerCompany,
           partner_url: row.partner_url.trim(),
-          estimated_value: parseInt(String(row.estimated_value).replace(/[^0-9]/g, '')) || 0,
+          estimated_value: parseInt(String(row.estimated_value || '').replace(/[^0-9]/g, '')) || 0,
           lead_source: row.lead_source?.trim() || 'Vendor Assigned',
           notes: row.notes?.trim() || null,
           vendor_user_id: req.user.role === 'vendor' ? req.user.id : null,
@@ -196,7 +210,7 @@ module.exports = function install(app) {
         });
         created.push(opp);
       } catch (e) {
-        errors.push(`${row.customer_name}: ${e.message}`);
+        errors.push(`${row.customer_url || 'row'}: ${e.message}`);
       }
     }
 
@@ -308,6 +322,36 @@ module.exports = function install(app) {
         <p>— DRiX by WinTech Partners</p>`);
 
       res.json({ ok: true, rep: { id: rep.id, name: rep.name, email: rep.email } });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // Reassign partner + its manager after the breakdown - owner only
+  app.post('/api/dashboard/opp/:id/reassign-partner', requireAuth, requireRole('vendor'), async (req, res) => {
+    const { partner_url, manager_email } = req.body || {};
+    if (!partner_url || !manager_email) return res.status(400).json({ error: 'partner_url and manager_email required' });
+    try {
+      const opp = await ddb.getOpportunityById(parseInt(req.params.id));
+      if (!opp) return res.status(404).json({ error: 'Not found' });
+      if (!ddb.userCanAccess(req.user, opp)) return res.status(403).json({ error: 'Access denied' });
+
+      const partnerCompany = nameFromUrl(partner_url) || partner_url.trim();
+      let mgr = await ddb.getUserByEmail(manager_email);
+      let pw = null;
+      if (!mgr) {
+        pw = tempPassword();
+        mgr = await ddb.createUser({ email: manager_email.trim(), password: pw, name: manager_email.split('@')[0], role: 'manager', company: partnerCompany });
+      }
+      await ddb.reassignPartner(opp.id, { partner_url: partner_url.trim(), partner_company: partnerCompany, manager_user_id: mgr.id });
+      ddb.recordAccess(opp.id, req.user.id, 'reassigned_partner', partnerCompany + ' (' + mgr.email + ')').catch(() => {});
+
+      sendEmail(mgr.email, 'New opportunity: ' + opp.customer_name,
+        '<p>Hi ' + mgr.name + ',</p>' +
+        '<p>You have been assigned an opportunity in the DRiX Dashboard: <strong>' + opp.customer_name + '</strong></p>' +
+        (pw ? '<p><strong>Email:</strong> ' + mgr.email + '<br><strong>Temporary password:</strong> ' + pw + '</p>' : '') +
+        (APP_URL ? '<p><a href="' + APP_URL + '/login">Log in</a></p>' : '') +
+        '<p>- DRiX by WinTech Partners</p>');
+
+      res.json({ ok: true, partner_company: partnerCompany, manager: { id: mgr.id, name: mgr.name, email: mgr.email } });
     } catch (e) { res.status(500).json({ error: e.message }); }
   });
 

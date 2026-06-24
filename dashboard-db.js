@@ -222,6 +222,16 @@ async function updateOppStatus(oppId, status) {
   `, [oppId, status]);
 }
 
+async function reassignPartner(oppId, { partner_url, partner_company, manager_user_id }) {
+  const p = pool();
+  if (!p) return;
+  await p.query(`
+    UPDATE opportunities
+    SET partner_url = $2, partner_company = $3, manager_user_id = $4, status_changed_at = NOW()
+    WHERE id = $1
+  `, [oppId, partner_url, partner_company, manager_user_id]);
+}
+
 async function selectStrategy(oppId, { strategyId, strategyTitle, hydration_result }) {
   const p = pool();
   if (!p) return;
@@ -390,6 +400,7 @@ module.exports = {
   updateOppDrixResult,
   updateOppDrixFailed,
   assignRep,
+  reassignPartner,
   updateOppStatus,
   selectStrategy,
   recordAccess,

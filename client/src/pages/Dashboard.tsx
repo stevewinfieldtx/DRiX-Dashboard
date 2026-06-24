@@ -274,9 +274,9 @@ export default function Dashboard() {
               <div className="bg-drix-surface2 border border-drix-border rounded-xl p-4 mb-4">
                 <div className="text-[10px] font-bold tracking-wider uppercase text-drix-muted mb-2">Required CSV columns</div>
                 <div className="grid grid-cols-2 gap-1 text-xs text-drix-dim">
-                  <span>customer_name</span><span>customer_url</span><span>solution_url</span><span>partner_company</span>
-                  <span>partner_url</span><span>manager_name</span><span>manager_email</span><span>estimated_value</span>
-                  <span>lead_source</span><span className="text-drix-muted italic">notes (optional)</span>
+                  <span>customer_url</span><span>solution_url</span>
+                  <span>partner_url</span><span>manager_email</span>
+                  <span className="text-drix-muted italic">(customer &amp; partner names are detected from the URLs)</span>
                 </div>
               </div>
               <label className="flex flex-col items-center justify-center gap-2 cursor-pointer bg-drix-bg border-2 border-dashed border-drix-border rounded-xl p-8 hover:border-drix-accent/50 transition-all">

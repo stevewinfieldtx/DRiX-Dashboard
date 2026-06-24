@@ -1,5 +1,4 @@
-customer_name,customer_url,solution_url,partner_company,partner_url,manager_name,manager_email,estimated_value,lead_source,notes
-Acme Manufacturing,acme-mfg.com,crowdstrike.com/products/endpoint-security,Rain Networks,rainnetworks.com,Mike Johnson,mike@rainnetworks.com,75000,Vendor Assigned,Legacy AV contract expires Q3
-Pinnacle Healthcare,pinnaclehealthcare.org,crowdstrike.com/products/endpoint-security,Rain Networks,rainnetworks.com,Mike Johnson,mike@rainnetworks.com,120000,Vendor Assigned,HIPAA compliance driver
-Brazos Energy Partners,brazosenergy.com,crowdstrike.com/products/cloud-security,Atlas7 Solutions,atlas7.com,Sarah Chen,sarah@atlas7.com,95000,Vendor Assigned,AWS migration in progress
-Meridian Financial Group,meridianfg.com,crowdstrike.com/products/identity-protection,Atlas7 Solutions,atlas7.com,Sarah Chen,sarah@atlas7.com,65000,Vendor Assigned,Recent phishing incident
+customer_url,solution_url,partner_url,manager_email
+https://www.snowflake.com,https://sublime.security,https://www.optiv.com,manager@optiv.com
+https://www.notion.so,https://sublime.security,https://www.guidepointsecurity.com,manager@guidepointsecurity.com
+https://www.figma.com,https://sublime.security,https://www.cdw.com,manager@cdw.com
