@@ -10,6 +10,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const FROM_EMAIL = process.env.DASHBOARD_FROM_EMAIL || 'nick@getthedrix.com';
+const SEND_EMAILS = process.env.SEND_EMAILS === '1'; // DEV: emails off unless SEND_EMAILS=1
 const APP_URL = (process.env.APP_URL || process.env.RAILWAY_PUBLIC_DOMAIN
   ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : '').replace(/\/+$/, '');
 
@@ -57,6 +58,7 @@ const csvUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 
 // ─── EMAIL ─────────────────────────────────────────────────────────────────────
 
 async function sendEmail(to, subject, html) {
+  if (!SEND_EMAILS) { console.log('[email] skipped (dev): ' + to + ' - ' + subject); return; }
   if (!RESEND_API_KEY) {
     console.log(`[email] Skipped (no key): ${to} — ${subject}`);
     return;
@@ -73,7 +75,7 @@ async function sendEmail(to, subject, html) {
   }
 }
 
-function tempPassword() { return crypto.randomBytes(4).toString('hex'); }
+function tempPassword() { return 'password1'; } // DEV: fixed password; restore random for production
 
 // Derive a display name from a URL (e.g. https://www.acme-corp.com -> "Acme Corp")
 function nameFromUrl(url) {
